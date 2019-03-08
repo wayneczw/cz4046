@@ -717,13 +717,13 @@ Final Utitlies:
 ------------------------------------
 Final Policy:
 ------------------------------------
-|   UP| null|   UP| LEFT| LEFT|   UP|
+|   UP| null| LEFT| LEFT| LEFT|   UP|
 ------------------------------------
 |   UP| LEFT| LEFT| LEFT| null|   UP|
 ------------------------------------
 |   UP| LEFT| LEFT|   UP| LEFT| LEFT|
 ------------------------------------
-|   UP|   UP| LEFT| LEFT|   UP|RIGHT|
+|   UP| LEFT| LEFT|   UP|   UP|   UP|
 ------------------------------------
 |   UP| null| null| null|   UP|   UP|
 ------------------------------------

@@ -399,40 +399,46 @@ public class PolicyIterationApp{
     }
 
     public static String getNewPolicy(double[][] utilities, State[][] stateArr, int r, int c) {
-        double upU, downU, leftU, rightU;
         double bestU = 0.0;
-        String bestAct;
+        String intendedAct;
+        String bestAct = null;
 
-        upU = getActionUtilities(utilities, stateArr, "UP", r, c);
-        bestAct = "UP";
-        bestU = upU;
-
-        downU = getActionUtilities(utilities, stateArr, "DOWN", r, c);
-        if (downU > bestU) {
-            bestAct = "DOWN";
-            bestU = downU;
-        }
-
-        leftU = getActionUtilities(utilities, stateArr, "LEFT", r, c);
-        if (leftU > bestU) {
-            bestAct = "LEFT";
-            bestU = leftU;
-        }
-
-        rightU = getActionUtilities(utilities, stateArr, "RIGHT", r, c);
-        if (rightU > bestU) {
-            bestAct = "RIGHT";
-            bestU = rightU;
+        // for each action
+        for(int i=0; i<ACTIONS.length; i++) {
+            intendedAct = ACTIONS[i];
+            if (i == 0) {
+                bestU = getExpectedUtilities(utilities, stateArr, intendedAct, r, c);
+                bestAct = intendedAct;
+            }
+            else {
+                if (getExpectedUtilities(utilities, stateArr, intendedAct, r, c) > bestU) {
+                    bestU = getExpectedUtilities(utilities, stateArr, intendedAct, r, c);
+                    bestAct = intendedAct;
+                }
+            }
         }
 
         return bestAct;
     }
 
-    public static double getActionUtilities(double[][] utilities, State[][] stateArr, String act, int row, int col) {
-        int[] newCoord = getNewCoord(stateArr, act, row, col);
-        int newR = newCoord[0];
-        int newC = newCoord[1];
-        return utilities[newR][newC];
+    public static double getExpectedUtilities(double[][] utilities, State[][] stateArr, String intendedAct, int row, int col) {
+        int[] intendedCoord, rightCoord, leftCoord;
+        String leftAct, rightAct;
+        double sum;
+
+        intendedCoord = getNewCoord(stateArr, intendedAct, row, col);
+
+        leftAct = _getLeftAction(intendedAct);
+        leftCoord = getNewCoord(stateArr, leftAct, row, col);
+
+        rightAct = _getRightAction(intendedAct);
+        rightCoord = getNewCoord(stateArr, rightAct, row, col);
+
+        sum = INTENDED_PROBA * utilities[intendedCoord[0]][intendedCoord[1]]
+                + LEFT_PROBA * utilities[leftCoord[0]][leftCoord[1]]
+                + RIGHT_PROBA * utilities[rightCoord[0]][rightCoord[1]];
+
+        return sum;
     }
 }
 

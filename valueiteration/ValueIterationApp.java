@@ -9,7 +9,7 @@ public class ValueIterationApp{
     public static final double RIGHT_PROBA = 0.1;
 
     public static final double RMAX = 1.00;
-    public static final double C = 0.10;
+    public static final double C = 65;
     public static final double EPSILON = C * RMAX;
 
     public static final int ROW = 6;
@@ -41,20 +41,20 @@ public class ValueIterationApp{
         */
         double[][] utilities = ValueIteration(stateArr);
         System.out.printf("Final Utitlies:\n");
-        for(int r=0; r<ROW; r++){
-            for (int c=0; c<COL; c++){
+        for(int r=0; r<ROW; r++) {
+            for (int c=0; c<COL; c++) {
                 System.out.printf("------");
             }
             System.out.printf("\n");
             System.out.printf("|");
 
-            for(int c=0; c<COL; c++){
+            for(int c=0; c<COL; c++) {
                 System.out.printf("%5.01f|", utilities[r][c]);
             }
             System.out.printf("\n");
         }
 
-        for (int c=0; c<COL; c++){
+        for (int c=0; c<COL; c++) {
             System.out.printf("------");
         }
         System.out.printf("\n");
@@ -64,26 +64,26 @@ public class ValueIterationApp{
         */
         String[][] optPolicy = getOptPolicy(utilities, stateArr);
         System.out.printf("Final Policy:\n");
-        for(int r=0; r<ROW; r++){
-            for (int c=0; c<COL; c++){
+        for(int r=0; r<ROW; r++) {
+            for (int c=0; c<COL; c++) {
                 System.out.printf("------");
             }
             System.out.printf("\n");
             System.out.printf("|");
 
-            for(int c=0; c<COL; c++){
+            for(int c=0; c<COL; c++) {
                 System.out.printf("%5s|", optPolicy[r][c]);
             }
             System.out.printf("\n");
         }
 
-        for (int c=0; c<COL; c++){
+        for (int c=0; c<COL; c++) {
             System.out.printf("------");
         }
         System.out.printf("\n");
     }
 
-    public static State[][] loadStates(){
+    public static State[][] loadStates() {
         
         State[][] stateArr = new State[ROW][COL];
 
@@ -142,16 +142,16 @@ public class ValueIterationApp{
         return stateArr;
     }
 
-    public static void printStates(State[][] stateArr){
+    public static void printStates(State[][] stateArr) {
         System.out.println("\n");
-        for(int r=0; r<ROW; r++){
-            for (int c=0; c<COL; c++){
+        for(int r=0; r<ROW; r++) {
+            for (int c=0; c<COL; c++) {
                 System.out.printf("---");
             }
             System.out.printf("\n");
             System.out.printf("|");
 
-            for(int c=0; c<COL; c++){
+            for(int c=0; c<COL; c++) {
                 if (stateArr[r][c].getType().equals("WALL")) {
                     System.out.printf("%s|", "Wa");
                 } else if (stateArr[r][c].getType().equals("GREEN")) {
@@ -165,78 +165,88 @@ public class ValueIterationApp{
             System.out.printf("\n");
         }
 
-        for (int c=0; c<COL; c++){
+        for (int c=0; c<COL; c++) {
             System.out.printf("---");
         }
         System.out.printf("\n");
     }
 
-    public static double[][] ValueIteration(State[][] stateArr){
+    public static double[][] ValueIteration(State[][] stateArr) {
         // Initialise curU, newU and delta with zeros.
         double[][] curU = new double[ROW][COL];
         double[][] newU = new double[ROW][COL];
         double delta;
-        double convergence = EPSILON * (1 - GAMMA) / GAMMA;
+        double convergence = EPSILON * (1 - GAMMA) / GAMMA;  // epsilon*(1-gamma)/gamma
         double reward;
         String stateType;
         int count =0;
 
+        // repeat
         do {
-            for(int r=0; r<ROW; r++){
-                for(int c=0; c<COL; c++){
+            // U <- U'
+            for(int r=0; r<ROW; r++) {
+                for(int c=0; c<COL; c++) {
                     curU[r][c] = newU[r][c];
                 }
             }
 
+            // delta <- 0
             delta = 0.0;
 
-            // for each state
-            for(int r=0; r<ROW; r++){
-                for(int c=0; c<COL; c++){
+            // for each state s in S
+            for(int r=0; r<ROW; r++) {
+                for(int c=0; c<COL; c++) {
+
+                    // if state is WALL, skip
                     stateType = stateArr[r][c].getType();
-                    if (stateType.equals("WALL")){
+                    if (stateType.equals("WALL")) {
                         continue;
                     }
+
+                    // R(s)
                     reward = stateArr[r][c].getReward();
 
+                    // U'[s] <- R(s) + gamma * max(a) SUM(P(s'|s,a)U[s'])
                     newU[r][c] = reward + GAMMA * getMax(stateArr, r, c, curU);
 
-                    if (Math.abs(newU[r][c] - curU[r][c]) > delta){
+                    // if |U'[s] - U[s]| > delta
+                    if (Math.abs(newU[r][c] - curU[r][c]) > delta) {
+                        // delta <- |U'[s] - U[s]|
                         delta = Math.abs(newU[r][c] - curU[r][c]);
                     }
-                    // System.out.printf("(%s, %s): %s\n", r, c, newU[r][c]);
-
                 }
             }
             count++;
             System.out.printf("Iteration: %s\n", count);
+        } while (!(delta < convergence));  // until delta < epsilon*(1-gamma)/gamma
 
-        } while (!(delta < convergence));
-
+        // return U
         return curU;
     }
 
-    public static double getMax(State[][] stateArr, int row, int col, double[][] curU){
+    public static double getMax(State[][] stateArr, int row, int col, double[][] curU) {
         double max = 0;
         double sum;
+        String intendedAct, leftAct, rightAct;
+        int[] intendedCoord, leftCoord, rightCoord;
 
         // for each action
-        for(int i=0; i<ACTIONS.length; i++){
-            String intendedAct = ACTIONS[i];
-            int[] intendedCoord = getNewCoord(stateArr, intendedAct, row, col);
+        for(int i=0; i<ACTIONS.length; i++) {
+            intendedAct = ACTIONS[i];
+            intendedCoord = getNewCoord(stateArr, intendedAct, row, col);
 
-            String leftAct = _getLeftAction(intendedAct);
-            int[] leftCoord = getNewCoord(stateArr, leftAct, row, col);
+            leftAct = _getLeftAction(intendedAct);
+            leftCoord = getNewCoord(stateArr, leftAct, row, col);
 
-            String rightAct = _getRightAction(intendedAct);
-            int [] rightCoord = getNewCoord(stateArr, rightAct, row, col);
+            rightAct = _getRightAction(intendedAct);
+            rightCoord = getNewCoord(stateArr, rightAct, row, col);
 
             sum = INTENDED_PROBA * curU[intendedCoord[0]][intendedCoord[1]]
                     + LEFT_PROBA * curU[leftCoord[0]][leftCoord[1]]
                     + RIGHT_PROBA * curU[rightCoord[0]][rightCoord[1]];
 
 
-            if (sum > max){
+            if (sum > max) {
                 max = sum;
             }
         }
@@ -245,17 +255,17 @@ public class ValueIterationApp{
         return max;
     }
 
-    public static int[] getNewCoord(State[][] stateArr, String act, int row, int col){
-        int newR;
-        int newC;
+    public static int[] getNewCoord(State[][] stateArr, String act, int row, int col) {
+        int newR, newC;
+        int[] coord;
 
-        if (act.equals("UP")){
+        if (act.equals("UP")) {
             newR = row - 1;
             newC = col;
-        } else if (act.equals("DOWN")){
+        } else if (act.equals("DOWN")) {
             newR = row + 1;
             newC = col;
-        } else if (act.equals("LEFT")){
+        } else if (act.equals("LEFT")) {
             newR = row;
             newC = col - 1;
         } else{
@@ -263,45 +273,45 @@ public class ValueIterationApp{
             newC = col + 1;
         }
 
-        try{
-            if (newR >= ROW){
+        try {
+            if (newR >= ROW) {
                 newR = row;
-            } else if (newR < 0){
+            } else if (newR < 0) {
                 newR = row;
-            } else if (stateArr[newR][newC].getType().equals("WALL")){
+            } else if (stateArr[newR][newC].getType().equals("WALL")) {
                 newR = row;
             }
         } catch (ArrayIndexOutOfBoundsException exception) {
             newR = row;
         }
 
-        try{
-            if (newC >= COL){
+        try {
+            if (newC >= COL) {
                 newC = col;
-            } else if (newC < 0){
+            } else if (newC < 0) {
                 newC = col;
-            } else if (stateArr[newR][newC].getType().equals("WALL")){
+            } else if (stateArr[newR][newC].getType().equals("WALL")) {
                 newC = col;
             }
         } catch (ArrayIndexOutOfBoundsException exception) {
             newC = col;
         }
 
-        int[] coord = new int[2];
+        coord = new int[2];
         coord[0] = newR;
         coord[1] = newC;
 
         return coord;
     }    
 
-    public static String _getLeftAction(String intendedAct){
-        if (intendedAct.equals("UP")){
+    public static String _getLeftAction(String intendedAct) {
+        if (intendedAct.equals("UP")) {
             return "LEFT";
         }
-        else if (intendedAct.equals("DOWN")){
+        else if (intendedAct.equals("DOWN")) {
             return "RIGHT";
         }
-        else if (intendedAct.equals("LEFT")){
+        else if (intendedAct.equals("LEFT")) {
             return "DOWN";
         }
         else{
@@ -309,14 +319,14 @@ public class ValueIterationApp{
         }
     }
 
-    public static String _getRightAction(String intendedAct){
-        if (intendedAct.equals("UP")){
+    public static String _getRightAction(String intendedAct) {
+        if (intendedAct.equals("UP")) {
             return "RIGHT";
         }
-        else if (intendedAct.equals("DOWN")){
+        else if (intendedAct.equals("DOWN")) {
             return "LEFT";
         }
-        else if (intendedAct.equals("LEFT")){
+        else if (intendedAct.equals("LEFT")) {
             return "UP";
         }
         else{
@@ -324,35 +334,35 @@ public class ValueIterationApp{
         }
     }
 
-    public static String[][] getOptPolicy(double[][] utilities, State[][] stateArr){
+    public static String[][] getOptPolicy(double[][] utilities, State[][] stateArr) {
         String[][] optPolicy = new String[ROW][COL];
-        double curU, upU, downU, leftU, rightU, bestU;
-        String bestAct;
+        double bestU = 0.0;
+        String bestAct = null;
+        String intendedAct;
 
-        for(int r=0; r<ROW; r++){
-            for(int c=0; c<COL; c++){
-                if (stateArr[r][c].getType().equals("WALL")){
+        // for each state s in S
+        for(int r=0; r<ROW; r++) {
+            for(int c=0; c<COL; c++) {
+                // if state is WALL, skip
+                if (stateArr[r][c].getType().equals("WALL")) {
                     continue;
                 }
-                curU = utilities[r][c];
-                upU = getActionUtilities(utilities, stateArr, "UP", r, c);
-                bestAct = "UP";
-                bestU = upU;
-                downU = getActionUtilities(utilities, stateArr, "DOWN", r, c);
-                if (downU > bestU){
-                    bestAct = "DOWN";
-                    bestU = downU;
+
+                // for each action
+                for(int i=0; i<ACTIONS.length; i++) {
+                    intendedAct = ACTIONS[i];
+                    if (i == 0) {
+                        bestU = getExpectedUtilities(utilities, stateArr, intendedAct, r, c);
+                        bestAct = intendedAct;
+                    }
+                    else {
+                        if (getExpectedUtilities(utilities, stateArr, intendedAct, r, c) > bestU) {
+                            bestU = getExpectedUtilities(utilities, stateArr, intendedAct, r, c);
+                            bestAct = intendedAct;
+                        }
+                    }
                 }
-                leftU = getActionUtilities(utilities, stateArr, "LEFT", r, c);
-                if (leftU > bestU){
-                    bestAct = "LEFT";
-                    bestU = leftU;
-                }
-                rightU = getActionUtilities(utilities, stateArr, "RIGHT", r, c);
-                if (rightU > bestU){
-                    bestAct = "RIGHT";
-                    bestU = rightU;
-                }
+
                 optPolicy[r][c] = bestAct;
             }
         }
@@ -360,11 +370,24 @@ public class ValueIterationApp{
         return optPolicy;
     }
 
-    public static double getActionUtilities(double[][] utilities, State[][] stateArr, String act, int row, int col){
-        int[] newCoord = getNewCoord(stateArr, act, row, col);
-        int newR = newCoord[0];
-        int newC = newCoord[1];
-        return utilities[newR][newC];
+    public static double getExpectedUtilities(double[][] utilities, State[][] stateArr, String intendedAct, int row, int col) {
+        int[] intendedCoord, rightCoord, leftCoord;
+        String leftAct, rightAct;
+        double sum;
+
+        intendedCoord = getNewCoord(stateArr, intendedAct, row, col);
+
+        leftAct = _getLeftAction(intendedAct);
+        leftCoord = getNewCoord(stateArr, leftAct, row, col);
+
+        rightAct = _getRightAction(intendedAct);
+        rightCoord = getNewCoord(stateArr, rightAct, row, col);
+
+        sum = INTENDED_PROBA * utilities[intendedCoord[0]][intendedCoord[1]]
+                + LEFT_PROBA * utilities[leftCoord[0]][leftCoord[1]]
+                + RIGHT_PROBA * utilities[rightCoord[0]][rightCoord[1]];
+
+        return sum;
     }
 }
 
@@ -378,7 +401,7 @@ class State{
         this.type = type;
     }
 
-    public double getReward(){
+    public double getReward() {
         return this.reward;
     }
 
