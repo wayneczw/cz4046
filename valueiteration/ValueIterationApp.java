@@ -2,14 +2,24 @@
 
 package valueiteration;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Scanner;
+import java.io.PrintWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+
 public class ValueIterationApp{
+
+    public static List<double[][]> history = new ArrayList<double[][]>();
 
     public static final double INTENDED_PROBA = 0.8;
     public static final double LEFT_PROBA = 0.1;
     public static final double RIGHT_PROBA = 0.1;
 
     public static final double RMAX = 1.00;
-    public static final double C = 65;
+    public static final double C = 0.1;
     public static final double EPSILON = C * RMAX;
 
     public static final int ROW = 6;
@@ -81,6 +91,8 @@ public class ValueIterationApp{
             System.out.printf("------");
         }
         System.out.printf("\n");
+
+        writeList(history);
     }
 
     public static State[][] loadStates() {
@@ -179,7 +191,7 @@ public class ValueIterationApp{
         double convergence = EPSILON * (1 - GAMMA) / GAMMA;  // epsilon*(1-gamma)/gamma
         double reward;
         String stateType;
-        int count =0;
+        int count = 0;
 
         // repeat
         do {
@@ -189,6 +201,15 @@ public class ValueIterationApp{
                     curU[r][c] = newU[r][c];
                 }
             }
+
+            // Keep track of utilities history in every iteration
+            double[][] histU = new double[ROW][COL];
+            for(int r=0; r<ROW; r++) {
+                for(int c=0; c<COL; c++) {
+                    histU[r][c] = curU[r][c];
+                }
+            }
+            history.add(histU);
 
             // delta <- 0
             delta = 0.0;
@@ -216,8 +237,9 @@ public class ValueIterationApp{
                     }
                 }
             }
+
             count++;
-            System.out.printf("Iteration: %s\n", count);
+
         } while (!(delta < convergence));  // until delta < epsilon*(1-gamma)/gamma
 
         // return U
@@ -250,8 +272,7 @@ public class ValueIterationApp{
                 max = sum;
             }
         }
-        // System.out.printf("%s", max);
-        // System.out.printf("\n");
+
         return max;
     }
 
@@ -388,6 +409,28 @@ public class ValueIterationApp{
                 + RIGHT_PROBA * utilities[rightCoord[0]][rightCoord[1]];
 
         return sum;
+    }
+
+    public static void writeList(List<double[][]> al) {
+        double[][] d;
+        File f = new File(System.getProperty("user.dir"), "valueiteration_hist.txt");
+        int size = al.size();
+
+        try (PrintWriter pw = new PrintWriter(f)) {
+            for (int i=0; i<size; i++) {
+                pw.println("====iteration: " + i + "====");
+
+                d = al.get(i);
+                for (int r=0; r<ROW; r++){
+                    for (int c=0; c<COL; c++){
+                        pw.println(d[r][c]);
+                    }
+                }
+
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 }
 
