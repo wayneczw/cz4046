@@ -1,19 +1,20 @@
 import matplotlib.pyplot as plt
+import collections
 
-file_path = 'valueiteration/valueiteration_hist.txt'
-fig_path = 'valueiteration/utilities_against_iterations.png'
-algo = 'Value Iteration'
+# file_path = 'valueiteration/valueiteration_hist.txt'
+# fig_path = 'valueiteration/utilities_against_iterations.png'
+# algo = 'Value Iteration'
 
-# file_path = 'policyiteration/policyiteration_hist.txt'
-# fig_path = 'policyiteration/utilities_against_iterations.png'
-# algo = 'Policy Iteration'
+file_path = 'policyiteration/policyiteration_hist.txt'
+fig_path = 'policyiteration/utilities_against_iterations.png'
+algo = 'Policy Iteration'
 
 with open(file_path, 'r') as f:
     f_list = f.readlines()
 
 f_list = [i.strip() for i in f_list]
 
-data_dict = dict()
+data_dict = collections.OrderedDict()
 ROW = 6
 COL = 6
 
@@ -35,6 +36,8 @@ for line in f_list:
     else:
         c = 0
         r += 1
+
+
 
 plt.figure(algo)
 plt.title("{} - Utilities against Iterations".format(algo))
