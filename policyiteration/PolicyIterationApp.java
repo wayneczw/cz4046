@@ -187,6 +187,9 @@ public class PolicyIterationApp{
         }
 
         do {
+            count++;
+            System.out.printf("Iteration: %s\n", count);
+
             // given a policy, calculate the utility of each state 
             // if the policy were to be executed.
             curU = PolicyEvaluation(policy, curU, stateArr);
@@ -220,9 +223,6 @@ public class PolicyIterationApp{
                     }
                 }
             }
-
-            count++;
-            System.out.printf("Iteration: %s\n", count);
 
         } while (!(unchanged));
 

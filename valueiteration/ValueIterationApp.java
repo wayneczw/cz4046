@@ -195,6 +195,9 @@ public class ValueIterationApp{
 
         // repeat
         do {
+            count++;
+            System.out.printf("Iteration: %s\n", count);
+            
             // U <- U'
             for(int r=0; r<ROW; r++) {
                 for(int c=0; c<COL; c++) {
@@ -237,8 +240,6 @@ public class ValueIterationApp{
                     }
                 }
             }
-
-            count++;
 
         } while (!(delta < convergence));  // until delta < epsilon*(1-gamma)/gamma
 
