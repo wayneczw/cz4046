@@ -1,6 +1,6 @@
 
 
-package valueiteration;
+package complexvalueiteration;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,16 +10,17 @@ import java.io.PrintWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 
-public class ValueIterationApp{
+public class ComplexValueIterationApp{
 
     public static List<double[][]> history = new ArrayList<double[][]>();
 
-    public static final double INTENDED_PROBA = 0.8;
+    public static final double INTENDED_PROBA = 0.6;
     public static final double LEFT_PROBA = 0.1;
     public static final double RIGHT_PROBA = 0.1;
+    public static final double OPP_PROBA = 0.2;
 
     public static final double RMAX = 1.00;
-    public static final double C = 46;
+    public static final double C = 44;
     public static final double EPSILON = C * RMAX;
 
     public static final int ROW = 6;
@@ -250,8 +251,8 @@ public class ValueIterationApp{
     public static double getMax(State[][] stateArr, int row, int col, double[][] curU) {
         double max = 0;
         double sum;
-        String intendedAct, leftAct, rightAct;
-        int[] intendedCoord, leftCoord, rightCoord;
+        String intendedAct, leftAct, rightAct, oppAct;
+        int[] intendedCoord, leftCoord, rightCoord, oppCoord;
 
         // for each action
         for(int i=0; i<ACTIONS.length; i++) {
@@ -264,9 +265,13 @@ public class ValueIterationApp{
             rightAct = _getRightAction(intendedAct);
             rightCoord = getNewCoord(stateArr, rightAct, row, col);
 
+            oppAct = _getOppAction(intendedAct);
+            oppCoord = getNewCoord(stateArr, oppAct, row, col);
+
             sum = INTENDED_PROBA * curU[intendedCoord[0]][intendedCoord[1]]
                     + LEFT_PROBA * curU[leftCoord[0]][leftCoord[1]]
-                    + RIGHT_PROBA * curU[rightCoord[0]][rightCoord[1]];
+                    + RIGHT_PROBA * curU[rightCoord[0]][rightCoord[1]]
+                    + OPP_PROBA * curU[oppCoord[0]][oppCoord[1]]                    ;
 
 
             if (sum > max) {
@@ -356,6 +361,21 @@ public class ValueIterationApp{
         }
     }
 
+    public static String _getOppAction(String intendedAct) {
+        if (intendedAct.equals("UP")) {
+            return "DOWN";
+        }
+        else if (intendedAct.equals("DOWN")) {
+            return "UP";
+        }
+        else if (intendedAct.equals("LEFT")) {
+            return "RIGHT";
+        }
+        else{
+            return "LEFT";
+        }
+    }
+
     public static String[][] getOptPolicy(double[][] utilities, State[][] stateArr) {
         String[][] optPolicy = new String[ROW][COL];
         double bestU = 0.0;
@@ -393,8 +413,8 @@ public class ValueIterationApp{
     }
 
     public static double getExpectedUtilities(double[][] utilities, State[][] stateArr, String intendedAct, int row, int col) {
-        int[] intendedCoord, rightCoord, leftCoord;
-        String leftAct, rightAct;
+        int[] intendedCoord, rightCoord, leftCoord, oppCoord;
+        String leftAct, rightAct, oppAct;
         double sum;
 
         intendedCoord = getNewCoord(stateArr, intendedAct, row, col);
@@ -405,9 +425,13 @@ public class ValueIterationApp{
         rightAct = _getRightAction(intendedAct);
         rightCoord = getNewCoord(stateArr, rightAct, row, col);
 
+        oppAct = _getOppAction(intendedAct);
+        oppCoord = getNewCoord(stateArr, oppAct, row, col);
+
         sum = INTENDED_PROBA * utilities[intendedCoord[0]][intendedCoord[1]]
                 + LEFT_PROBA * utilities[leftCoord[0]][leftCoord[1]]
-                + RIGHT_PROBA * utilities[rightCoord[0]][rightCoord[1]];
+                + RIGHT_PROBA * utilities[rightCoord[0]][rightCoord[1]]
+                + OPP_PROBA * utilities[oppCoord[0]][oppCoord[1]];
 
         return sum;
     }

@@ -1,6 +1,6 @@
 
 
-package valueiteration;
+package complexvalueiteration;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,7 +10,7 @@ import java.io.PrintWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 
-public class ValueIterationApp{
+public class MoreValueIterationApp{
 
     public static List<double[][]> history = new ArrayList<double[][]>();
 
@@ -19,11 +19,11 @@ public class ValueIterationApp{
     public static final double RIGHT_PROBA = 0.1;
 
     public static final double RMAX = 1.00;
-    public static final double C = 46;
+    public static final double C = 28;
     public static final double EPSILON = C * RMAX;
 
-    public static final int ROW = 6;
-    public static final int COL = 6;
+    public static final int ROW = 18;
+    public static final int COL = 18;
     public static final String GREEN_COORD = "0,0; 0,2; 0,5; 1,3; 2,4; 3,5";
     public static final String BROWN_COORD = "1,1; 1,5; 2,2; 3,3; 4,4";
     public static final String WALL_COORD = "0,1; 1,4; 4,1; 4,2; 4,3";
@@ -121,6 +121,8 @@ public class ValueIterationApp{
             int c = Integer.parseInt(coord[1]);
             
             stateArr[r][c] = new State(WALL_REWARD, "WALL");
+            stateArr[r*2][c*2] = new State(WALL_REWARD, "WALL");
+            stateArr[r*3][c*3] = new State(WALL_REWARD, "WALL");
         }
 
         /* 
@@ -135,6 +137,8 @@ public class ValueIterationApp{
             int c = Integer.parseInt(coord[1]);
             
             stateArr[r][c] = new State(GREEN_REWARD, "GREEN");
+            stateArr[r*2][c*2] = new State(GREEN_REWARD, "GREEN");
+            stateArr[r*3][c*3] = new State(GREEN_REWARD, "GREEN");
         }
 
         /* 
@@ -149,6 +153,8 @@ public class ValueIterationApp{
             int c = Integer.parseInt(coord[1]);
             
             stateArr[r][c] = new State(BROWN_REWARD, "BROWN");
+            stateArr[r*2][c*2] = new State(BROWN_REWARD, "BROWN");
+            stateArr[r*3][c*3] = new State(BROWN_REWARD, "BROWN");
         }
 
         return stateArr;

@@ -1,6 +1,9 @@
 
 
-package valueiteration;
+package complexpolicyiteration;
+
+import java.util.Random;
+import java.util.Scanner;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,16 +13,17 @@ import java.io.PrintWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 
-public class ValueIterationApp{
+public class ComplexPolicyIterationApp{
 
     public static List<double[][]> history = new ArrayList<double[][]>();
 
-    public static final double INTENDED_PROBA = 0.8;
+    public static final double INTENDED_PROBA = 0.6;
     public static final double LEFT_PROBA = 0.1;
     public static final double RIGHT_PROBA = 0.1;
+    public static final double OPP_PROBA = 0.2;
 
     public static final double RMAX = 1.00;
-    public static final double C = 46;
+    public static final double C = 0.10;
     public static final double EPSILON = C * RMAX;
 
     public static final int ROW = 6;
@@ -47,32 +51,10 @@ public class ValueIterationApp{
         printStates(stateArr);
 
         /*
-        Value-iteration algo that returns the vector of utilities.
+        Policy-iteration algo that returns the vector of policies.
         */
-        double[][] utilities = ValueIteration(stateArr);
-        System.out.printf("Final Utitlies:\n");
-        for(int r=0; r<ROW; r++) {
-            for (int c=0; c<COL; c++) {
-                System.out.printf("------");
-            }
-            System.out.printf("\n");
-            System.out.printf("|");
+        String[][] optPolicy = PolicyIteration(stateArr);
 
-            for(int c=0; c<COL; c++) {
-                System.out.printf("%5.01f|", utilities[r][c]);
-            }
-            System.out.printf("\n");
-        }
-
-        for (int c=0; c<COL; c++) {
-            System.out.printf("------");
-        }
-        System.out.printf("\n");
-
-        /*
-        Produce optimal policy for each state by using the vector of utilities.
-        */
-        String[][] optPolicy = getOptPolicy(utilities, stateArr);
         System.out.printf("Final Policy:\n");
         for(int r=0; r<ROW; r++) {
             for (int c=0; c<COL; c++) {
@@ -183,29 +165,38 @@ public class ValueIterationApp{
         System.out.printf("\n");
     }
 
-    public static double[][] ValueIteration(State[][] stateArr) {
-        // Initialise curU, newU and delta with zeros.
+    public static String[][] PolicyIteration(State[][] stateArr) {
+        // Initialise curU and delta with zeros.
         double[][] curU = new double[ROW][COL];
-        double[][] newU = new double[ROW][COL];
-        double delta;
-        double convergence = EPSILON * (1 - GAMMA) / GAMMA;  // epsilon*(1-gamma)/gamma
-        double reward;
-        String stateType;
-        int count = 0;
+        String[][] policy = new String[ROW][COL];
+        boolean unchanged;
+        String curAct, stateType, oldPol;
+        Random rand = new Random();
+        rand.setSeed(0); 
+        int count =0;
 
-        // repeat
+        // randomise initial policy
+        for(int r=0; r<ROW; r++) {
+            for(int c=0; c<COL; c++) {
+                stateType = stateArr[r][c].getType();
+                if (stateType.equals("WALL")) {
+                    continue;
+                }
+                int i = rand.nextInt(ACTIONS.length);
+                policy[r][c] = ACTIONS[i];
+            }
+        }
+
         do {
             count++;
             System.out.printf("Iteration: %s\n", count);
-            
-            // U <- U'
-            for(int r=0; r<ROW; r++) {
-                for(int c=0; c<COL; c++) {
-                    curU[r][c] = newU[r][c];
-                }
-            }
 
-            // Keep track of utilities history in every iteration
+            // given a policy, calculate the utility of each state 
+            // if the policy were to be executed.
+            curU = PolicyEvaluation(policy, curU, stateArr);
+            unchanged = true;
+
+            // keep track of utilities history in every iteration
             double[][] histU = new double[ROW][COL];
             for(int r=0; r<ROW; r++) {
                 for(int c=0; c<COL; c++) {
@@ -214,44 +205,102 @@ public class ValueIterationApp{
             }
             history.add(histU);
 
-            // delta <- 0
-            delta = 0.0;
-
-            // for each state s in S
+            // for each state
             for(int r=0; r<ROW; r++) {
                 for(int c=0; c<COL; c++) {
-
-                    // if state is WALL, skip
                     stateType = stateArr[r][c].getType();
                     if (stateType.equals("WALL")) {
                         continue;
                     }
+                    
+                    curAct = policy[r][c];
 
-                    // R(s)
+                    if (getMax(stateArr, r, c, curU) > getSum(curAct, stateArr, r, c, curU)) {
+                        oldPol = policy[r][c];
+                        policy[r][c] = getNewPolicy(curU, stateArr, r, c);
+                        if (!(oldPol.equals(policy[r][c]))) {
+                            unchanged = false;
+                        }
+                    }
+                }
+            }
+
+        } while (!(unchanged));
+
+        // print final utilites
+        System.out.printf("Final Utitlies:\n");
+        for(int r=0; r<ROW; r++){
+            for (int c=0; c<COL; c++){
+                System.out.printf("------");
+            }
+            System.out.printf("\n");
+            System.out.printf("|");
+
+            for(int c=0; c<COL; c++){
+                System.out.printf("%5.01f|", curU[r][c]);
+            }
+            System.out.printf("\n");
+        }
+
+        for (int c=0; c<COL; c++){
+            System.out.printf("------");
+        }
+        System.out.printf("\n");
+
+        return policy;
+    }
+
+    public static double[][] PolicyEvaluation(String[][] policy, double[][] curU, State[][] stateArr) {
+        double delta;
+        double convergence = EPSILON * (1 - GAMMA) / GAMMA;
+        double reward;
+        double[][] newU = new double[ROW][COL];
+        String stateType, intendedAct;
+        int count =0;
+
+        for(int r=0; r<ROW; r++) {
+            for(int c=0; c<COL; c++) {
+                newU[r][c] = curU[r][c];
+            }
+        }
+
+        do{
+            for(int r=0; r<ROW; r++) {
+                for(int c=0; c<COL; c++) {
+                    curU[r][c] = newU[r][c];
+                }
+            }
+
+            delta = 0.0;
+
+            // for each state solve linear equations
+            for(int r=0; r<ROW; r++) {
+                for(int c=0; c<COL; c++) {
+                    stateType = stateArr[r][c].getType();
+                    if (stateType.equals("WALL")) {
+                        continue;
+                    }
                     reward = stateArr[r][c].getReward();
+                    intendedAct = policy[r][c];
+                    newU[r][c] = reward + GAMMA * getSum(intendedAct, stateArr, r, c, curU);
 
-                    // U'[s] <- R(s) + gamma * max(a) SUM(P(s'|s,a)U[s'])
-                    newU[r][c] = reward + GAMMA * getMax(stateArr, r, c, curU);
-
-                    // if |U'[s] - U[s]| > delta
                     if (Math.abs(newU[r][c] - curU[r][c]) > delta) {
-                        // delta <- |U'[s] - U[s]|
                         delta = Math.abs(newU[r][c] - curU[r][c]);
                     }
                 }
             }
 
-        } while (!(delta < convergence));  // until delta < epsilon*(1-gamma)/gamma
+            count++;
+        } while (!(delta < convergence));
 
-        // return U
         return curU;
     }
 
     public static double getMax(State[][] stateArr, int row, int col, double[][] curU) {
-        double max = 0;
+        double max = 0.0;
         double sum;
-        String intendedAct, leftAct, rightAct;
-        int[] intendedCoord, leftCoord, rightCoord;
+        String intendedAct, leftAct, rightAct, oppAct;
+        int[] intendedCoord, leftCoord, rightCoord, oppCoord;
 
         // for each action
         for(int i=0; i<ACTIONS.length; i++) {
@@ -264,17 +313,43 @@ public class ValueIterationApp{
             rightAct = _getRightAction(intendedAct);
             rightCoord = getNewCoord(stateArr, rightAct, row, col);
 
+            oppAct = _getOppAction(intendedAct);
+            oppCoord = getNewCoord(stateArr, oppAct, row, col);
+
             sum = INTENDED_PROBA * curU[intendedCoord[0]][intendedCoord[1]]
                     + LEFT_PROBA * curU[leftCoord[0]][leftCoord[1]]
-                    + RIGHT_PROBA * curU[rightCoord[0]][rightCoord[1]];
-
+                    + RIGHT_PROBA * curU[rightCoord[0]][rightCoord[1]]
+                    + OPP_PROBA * curU[oppCoord[0]][oppCoord[1]];
 
             if (sum > max) {
                 max = sum;
             }
         }
-
         return max;
+    }
+
+    public static double getSum(String intendedAct, State[][] stateArr, int row, int col, double[][] curU) {
+        double sum;
+        String leftAct, rightAct, oppAct;
+        int[] intendedCoord, leftCoord, rightCoord, oppCoord;
+
+        intendedCoord = getNewCoord(stateArr, intendedAct, row, col);
+
+        leftAct = _getLeftAction(intendedAct);
+        leftCoord = getNewCoord(stateArr, leftAct, row, col);
+
+        rightAct = _getRightAction(intendedAct);
+        rightCoord = getNewCoord(stateArr, rightAct, row, col);
+
+        oppAct = _getOppAction(intendedAct);
+        oppCoord = getNewCoord(stateArr, oppAct, row, col);
+
+        sum = INTENDED_PROBA * curU[intendedCoord[0]][intendedCoord[1]]
+                + LEFT_PROBA * curU[leftCoord[0]][leftCoord[1]]
+                + RIGHT_PROBA * curU[rightCoord[0]][rightCoord[1]]
+                + OPP_PROBA * curU[oppCoord[0]][oppCoord[1]];
+
+        return sum;
     }
 
     public static int[] getNewCoord(State[][] stateArr, String act, int row, int col) {
@@ -295,7 +370,7 @@ public class ValueIterationApp{
             newC = col + 1;
         }
 
-        try {
+        try{
             if (newR >= ROW) {
                 newR = row;
             } else if (newR < 0) {
@@ -307,7 +382,7 @@ public class ValueIterationApp{
             newR = row;
         }
 
-        try {
+        try{
             if (newC >= COL) {
                 newC = col;
             } else if (newC < 0) {
@@ -356,45 +431,47 @@ public class ValueIterationApp{
         }
     }
 
-    public static String[][] getOptPolicy(double[][] utilities, State[][] stateArr) {
-        String[][] optPolicy = new String[ROW][COL];
+    public static String _getOppAction(String intendedAct) {
+        if (intendedAct.equals("UP")) {
+            return "DOWN";
+        }
+        else if (intendedAct.equals("DOWN")) {
+            return "UP";
+        }
+        else if (intendedAct.equals("LEFT")) {
+            return "RIGHT";
+        }
+        else{
+            return "LEFT";
+        }
+    }
+
+    public static String getNewPolicy(double[][] utilities, State[][] stateArr, int r, int c) {
         double bestU = 0.0;
-        String bestAct = null;
         String intendedAct;
+        String bestAct = null;
 
-        // for each state s in S
-        for(int r=0; r<ROW; r++) {
-            for(int c=0; c<COL; c++) {
-                // if state is WALL, skip
-                if (stateArr[r][c].getType().equals("WALL")) {
-                    continue;
+        // for each action
+        for(int i=0; i<ACTIONS.length; i++) {
+            intendedAct = ACTIONS[i];
+            if (i == 0) {
+                bestU = getExpectedUtilities(utilities, stateArr, intendedAct, r, c);
+                bestAct = intendedAct;
+            }
+            else {
+                if (getExpectedUtilities(utilities, stateArr, intendedAct, r, c) > bestU) {
+                    bestU = getExpectedUtilities(utilities, stateArr, intendedAct, r, c);
+                    bestAct = intendedAct;
                 }
-
-                // for each action
-                for(int i=0; i<ACTIONS.length; i++) {
-                    intendedAct = ACTIONS[i];
-                    if (i == 0) {
-                        bestU = getExpectedUtilities(utilities, stateArr, intendedAct, r, c);
-                        bestAct = intendedAct;
-                    }
-                    else {
-                        if (getExpectedUtilities(utilities, stateArr, intendedAct, r, c) > bestU) {
-                            bestU = getExpectedUtilities(utilities, stateArr, intendedAct, r, c);
-                            bestAct = intendedAct;
-                        }
-                    }
-                }
-
-                optPolicy[r][c] = bestAct;
             }
         }
 
-        return optPolicy;
+        return bestAct;
     }
 
     public static double getExpectedUtilities(double[][] utilities, State[][] stateArr, String intendedAct, int row, int col) {
-        int[] intendedCoord, rightCoord, leftCoord;
-        String leftAct, rightAct;
+        int[] intendedCoord, rightCoord, leftCoord, oppCoord;
+        String leftAct, rightAct, oppAct;
         double sum;
 
         intendedCoord = getNewCoord(stateArr, intendedAct, row, col);
@@ -405,18 +482,21 @@ public class ValueIterationApp{
         rightAct = _getRightAction(intendedAct);
         rightCoord = getNewCoord(stateArr, rightAct, row, col);
 
+        oppAct = _getOppAction(intendedAct);
+        oppCoord = getNewCoord(stateArr, oppAct, row, col);
+
         sum = INTENDED_PROBA * utilities[intendedCoord[0]][intendedCoord[1]]
                 + LEFT_PROBA * utilities[leftCoord[0]][leftCoord[1]]
-                + RIGHT_PROBA * utilities[rightCoord[0]][rightCoord[1]];
+                + RIGHT_PROBA * utilities[rightCoord[0]][rightCoord[1]]
+                + OPP_PROBA * utilities[oppCoord[0]][oppCoord[1]];
 
         return sum;
     }
 
     public static void writeList(List<double[][]> al) {
         double[][] d;
-        File f = new File(System.getProperty("user.dir"), "valueiteration_hist.txt");
+        File f = new File(System.getProperty("user.dir"), "policyiteration_hist.txt");
         int size = al.size();
-
         try (PrintWriter pw = new PrintWriter(f)) {
             for (int i=0; i<size; i++) {
                 pw.println("====iteration: " + i + "====");
@@ -427,7 +507,6 @@ public class ValueIterationApp{
                         pw.println(d[r][c]);
                     }
                 }
-
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
