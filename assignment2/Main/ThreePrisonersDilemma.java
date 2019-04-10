@@ -173,7 +173,7 @@ public class ThreePrisonersDilemma {
 
 		boolean isRandom(int n, int[] oppHistory) {
 			int sum = 0;
-			double eps = 0.05;
+			double eps = 0.025;
 
 			for (int i=1; i<n; i++) {
 				sum += oppHistory[i];
@@ -181,7 +181,7 @@ public class ThreePrisonersDilemma {
 
 			// if ratio is roughly 0.5,
 			// then the history is highly likely to be random
-			double ratio = sum / n;
+			double ratio = (double) sum / n;
 
 			if (Math.abs(ratio - 0.5) < eps)
 				return true;
@@ -226,16 +226,16 @@ public class ThreePrisonersDilemma {
 	 (strategies) in between matches. When you add your own strategy,
 	 you will need to add a new entry to makePlayer, and change numPlayers.*/
 	
-	int numPlayers = 3;
+	int numPlayers = 7;
 	Player makePlayer(int which) {
 		switch (which) {
 		case 0: return new Chen_Zhiwei_Player();
 		case 1: return new NastyPlayer();
 		case 2: return new NicePlayer();
-		// case 3: return new TolerantPlayer();
-		// case 4: return new T4TPlayer();
-		// case 5: return new FreakyPlayer();
-		// case 6: return new RandomPlayer();
+		case 3: return new TolerantPlayer();
+		case 4: return new T4TPlayer();
+		case 5: return new FreakyPlayer();
+		case 6: return new RandomPlayer();
 		}
 		throw new RuntimeException("Bad argument passed to makePlayer");
 	}
