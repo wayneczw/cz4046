@@ -1,3 +1,5 @@
+package Main;
+
 public class ThreePrisonersDilemma {
 	
 	/* 
@@ -126,6 +128,68 @@ public class ThreePrisonersDilemma {
 		}	
 	}
 
+	class Chen_Zhiwei_Player extends Player {
+		int selectAction(int n, int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
+			// First Law: Always cooperate in first 5 rounds
+			if (n <= 5)
+				return 0;
+
+			// Second Law: If any one opp is single minded, then always defect
+			boolean isSingleMindedOpp1, isSingleMindedOpp2;
+			isSingleMindedOpp1 = isSingleMinded(n, oppHistory1);
+			isSingleMindedOpp2 = isSingleMinded(n, oppHistory2);
+			if (isSingleMindedOpp1 || isSingleMindedOpp2)
+				return 1;
+
+			// Third Law: Tolerate 2 consecutive defects from both opp
+			// If 2 consecutive defects from both opp, then defect
+			if (oppHistory1[n-1] == 1 &&
+				oppHistory1[n-2] == 1 &&
+				oppHistory2[n-1] == 1 &&
+				oppHistory2[n-2] == 1)
+				return 1;
+
+			// Forth Law: If any one opp is random, then always defect
+			boolean isRandomOpp1, isRandomOpp2;
+			isRandomOpp1 = isRandom(n, oppHistory1);
+			isRandomOpp2 = isRandom(n, oppHistory2);
+			if (isRandomOpp1 || isRandomOpp2)
+				return 1;
+
+			// Fifth Law: If above laws don't apply, then always cooperate
+			return 0;
+		}
+
+		boolean isSingleMinded(int n, int[] oppHistory) {
+			// if this player is not single minded
+			// just return false
+			for (int i=1; i<n; i++) {
+				if (oppHistory[i] != oppHistory[i-1])
+					return false;
+			}
+
+			return true;
+		}
+
+		boolean isRandom(int n, int[] oppHistory) {
+			int sum = 0;
+			double eps = 0.05;
+
+			for (int i=1; i<n; i++) {
+				sum += oppHistory[i];
+			}
+
+			// if ratio is roughly 0.5,
+			// then the history is highly likely to be random
+			double ratio = sum / n;
+
+			if (Math.abs(ratio - 0.5) < eps)
+				return true;
+			else
+				return false;
+		}
+	}
+
 	
 	/* In our tournament, each pair of strategies will play one match against each other. 
 	 This procedure simulates a single match and returns the scores. */
@@ -162,15 +226,16 @@ public class ThreePrisonersDilemma {
 	 (strategies) in between matches. When you add your own strategy,
 	 you will need to add a new entry to makePlayer, and change numPlayers.*/
 	
-	int numPlayers = 6;
+	int numPlayers = 3;
 	Player makePlayer(int which) {
 		switch (which) {
-		case 0: return new NicePlayer();
+		case 0: return new Chen_Zhiwei_Player();
 		case 1: return new NastyPlayer();
-		case 2: return new RandomPlayer();
-		case 3: return new TolerantPlayer();
-		case 4: return new FreakyPlayer();
-		case 5: return new T4TPlayer();
+		case 2: return new NicePlayer();
+		// case 3: return new TolerantPlayer();
+		// case 4: return new T4TPlayer();
+		// case 5: return new FreakyPlayer();
+		// case 6: return new RandomPlayer();
 		}
 		throw new RuntimeException("Bad argument passed to makePlayer");
 	}
@@ -182,7 +247,7 @@ public class ThreePrisonersDilemma {
 		instance.runTournament();
 	}
 	
-	boolean verbose = true; // set verbose = false if you get too much text output
+	boolean verbose = false; // set verbose = false if you get too much text output
 	
 	void runTournament() {
 		float[] totalScore = new float[numPlayers];
