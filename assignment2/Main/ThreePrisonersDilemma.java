@@ -130,18 +130,11 @@ public class ThreePrisonersDilemma {
 
 	class Chen_Zhiwei_Player extends Player {
 		int selectAction(int n, int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
-			// First Law: Always cooperate in first 5 rounds
-			if (n <= 5)
+			// First Law: Always cooperate in first 2 rounds
+			if (n <= 2)
 				return 0;
 
-			// Second Law: If any one opp is single minded, then always defect
-			boolean isSingleMindedOpp1, isSingleMindedOpp2;
-			isSingleMindedOpp1 = isSingleMinded(n, oppHistory1);
-			isSingleMindedOpp2 = isSingleMinded(n, oppHistory2);
-			if (isSingleMindedOpp1 || isSingleMindedOpp2)
-				return 1;
-
-			// Third Law: Tolerate 2 consecutive defects from both opp
+			// Second Law: Tolerate 2 consecutive defects from both opp
 			// If 2 consecutive defects from both opp, then defect
 			if (oppHistory1[n-1] == 1 &&
 				oppHistory1[n-2] == 1 &&
@@ -149,44 +142,11 @@ public class ThreePrisonersDilemma {
 				oppHistory2[n-2] == 1)
 				return 1;
 
-			// Forth Law: If any one opp is random, then always defect
-			boolean isRandomOpp1, isRandomOpp2;
-			isRandomOpp1 = isRandom(n, oppHistory1);
-			isRandomOpp2 = isRandom(n, oppHistory2);
-			if (isRandomOpp1 || isRandomOpp2)
-				return 1;
-
-			// Fifth Law: If above laws don't apply, then always cooperate
-			return 0;
-		}
-
-		boolean isSingleMinded(int n, int[] oppHistory) {
-			// if this player is not single minded
-			// just return false
-			for (int i=1; i<n; i++) {
-				if (oppHistory[i] != oppHistory[i-1])
-					return false;
-			}
-
-			return true;
-		}
-
-		boolean isRandom(int n, int[] oppHistory) {
-			int sum = 0;
-			double eps = 0.025;
-
-			for (int i=1; i<n; i++) {
-				sum += oppHistory[i];
-			}
-
-			// if ratio is roughly 0.5,
-			// then the history is highly likely to be random
-			double ratio = (double) sum / n;
-
-			if (Math.abs(ratio - 0.5) < eps)
-				return true;
+			// Third Law: If above laws don't apply, then be a T4TPlayer
+			if (Math.random() < 0.5)
+				return oppHistory1[n-1];
 			else
-				return false;
+				return oppHistory2[n-1];
 		}
 	}
 
