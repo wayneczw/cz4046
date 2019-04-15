@@ -20,7 +20,7 @@ public class ThreePrisonersDilemma {
 		{{6,3},  //payoffs when first and second players cooperate 
 		 {3,0}}, //payoffs when first player coops, second defects
 		{{8,5},  //payoffs when first player defects, second coops
-	     {5,2}}};//payoffs when first and second players defect
+		 {5,2}}};//payoffs when first and second players defect
 	
 	/* 
 	 So payoff[i][j][k] represents the payoff to player 1 when the first
@@ -129,38 +129,41 @@ public class ThreePrisonersDilemma {
 	}
 
 	class Chen_Zhiwei_Player extends Player {
+		int myScore = 0;
+		int opp1Score = 0;
+		int opp2Score = 0;
+
 		int selectAction(int n, int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
 			// First Law: Always cooperate in first 2 rounds
-			if (n < 2)
-				return 0;
+			if (n < 2) return 0;
 
 			// Second Law: Tolerate 2 consecutive defects from both opp
 			// If 2 consecutive defects from both opp, then defect
-			if (oppHistory1[n-1] == 1 &&
-				oppHistory1[n-2] == 1 &&
-				oppHistory2[n-1] == 1 &&
-				oppHistory2[n-2] == 1)
+			if (oppHistory1[n-1] == 1 && oppHistory1[n-2] == 1 &&
+				oppHistory2[n-1] == 1 && oppHistory2[n-2] == 1)
 				return 1;
 
 			// Third Law: if one of the opponents is Nasty, then always defect
 			boolean isOpp1Nasty, isOpp2Nasty;
 			isOpp1Nasty = isNasty(n, oppHistory1);
 			isOpp2Nasty = isNasty(n, oppHistory2);
-			if (isOpp1Nasty || isOpp2Nasty)
-				return 1;
+			if (isOpp1Nasty || isOpp2Nasty) return 1;
 
 			// Fourth Law: if one of the opponents is Random, then always defect
 			boolean isOpp1Random, isOpp2Random;
 			isOpp1Random = isRandom(n, oppHistory1);
 			isOpp2Random = isRandom(n, oppHistory2);
-			if (isOpp1Random || isOpp2Random)
-				return 1;
+			if (isOpp1Random || isOpp2Random) return 1;
 
-			// Fifth Law: If above laws don't apply, then be a T4TPlayer
-			if (Math.random() < 0.5)
-				return oppHistory1[n-1];
-			else
-				return oppHistory2[n-1];
+			// Fifth Law: if my current score is lower than one of the opp, then always defect
+			myScore += payoff[myHistory[n-1]][oppHistory1[n-1]][oppHistory2[n-1]];
+			opp1Score += payoff[oppHistory1[n-1]][oppHistory2[n-1]][myHistory[n-1]];
+			opp2Score += payoff[oppHistory2[n-1]][oppHistory1[n-1]][myHistory[n-1]];
+			if (myScore < opp1Score || myScore < opp2Score) return 1;
+
+			// Sixth Law: If above laws don't apply, then be a T4TPlayer
+			if (Math.random() < 0.5) return oppHistory1[n-1];
+			else return oppHistory2[n-1];
 		}
 
 		boolean isNasty(int n, int[] oppHistory) {
@@ -170,10 +173,8 @@ public class ThreePrisonersDilemma {
 					cnt++;
 			}
 
-			if (cnt == n)
-				return true;
-			else
-				return false;
+			if (cnt == n) return true;
+			else return false;
 		}
 
 		boolean isRandom(int n, int[] oppHistory) {
@@ -185,10 +186,8 @@ public class ThreePrisonersDilemma {
 
 			// if ratio is roughly 0.5, then the opponent is highly likely to be random
 			double ratio = (double) sum / n;
-			if (Math.abs(ratio - 0.5) < eps)
-				return true;
-			else
-				return false;
+			if (Math.abs(ratio - 0.5) < eps) return true;
+			else return false;
 		}
 	}
 
@@ -228,16 +227,18 @@ public class ThreePrisonersDilemma {
 	 (strategies) in between matches. When you add your own strategy,
 	 you will need to add a new entry to makePlayer, and change numPlayers.*/
 	
-	int numPlayers = 7;
+	int numPlayers = 3;
 	Player makePlayer(int which) {
 		switch (which) {
 		case 0: return new Chen_Zhiwei_Player();
-		case 1: return new NicePlayer();
-		case 2: return new NastyPlayer();
-		case 3: return new TolerantPlayer();
-		case 4: return new T4TPlayer();
-		case 5: return new FreakyPlayer();
-		case 6: return new RandomPlayer();
+		case 1: return new T4TPlayer();
+		case 2: return new T4TPlayer();
+		// case 1: return new NicePlayer();
+		// case 2: return new NastyPlayer();
+		// case 3: return new TolerantPlayer();
+		// case 4: return new T4TPlayer();
+		// case 5: return new FreakyPlayer();
+		// case 6: return new RandomPlayer();
 		}
 		throw new RuntimeException("Bad argument passed to makePlayer");
 	}
@@ -249,7 +250,7 @@ public class ThreePrisonersDilemma {
 		instance.runTournament();
 	}
 	
-	boolean verbose = true; // set verbose = false if you get too much text output
+	boolean verbose = false; // set verbose = false if you get too much text output
 	
 	void runTournament() {
 		float[] totalScore = new float[numPlayers];
@@ -258,7 +259,7 @@ public class ThreePrisonersDilemma {
 		// Note that we include duplicates: two copies of your strategy will play once
 		// against each other strategy, and three copies of your strategy will play once.
 
-		for (int i=0; i<numPlayers; i++) for (int j=i; j<numPlayers; j++) for (int k=j; k<numPlayers; k++) {
+		for (int i=0; i<numPlayers; i++) for (int j=i+1; j<numPlayers; j++) for (int k=j+1; k<numPlayers; k++) {
 
 			Player A = makePlayer(i); // Create a fresh copy of each player
 			Player B = makePlayer(j);
