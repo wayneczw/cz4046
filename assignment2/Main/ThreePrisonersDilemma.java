@@ -131,7 +131,7 @@ public class ThreePrisonersDilemma {
 	class Chen_Zhiwei_Player extends Player {
 		int selectAction(int n, int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
 			// First Law: Always cooperate in first 2 rounds
-			if (n <= 2)
+			if (n < 2)
 				return 0;
 
 			// Second Law: Tolerate 2 consecutive defects from both opp
@@ -142,11 +142,53 @@ public class ThreePrisonersDilemma {
 				oppHistory2[n-2] == 1)
 				return 1;
 
-			// Third Law: If above laws don't apply, then be a T4TPlayer
+			// Third Law: if one of the opponents is Nasty, then always defect
+			boolean isOpp1Nasty, isOpp2Nasty;
+			isOpp1Nasty = isNasty(n, oppHistory1);
+			isOpp2Nasty = isNasty(n, oppHistory2);
+			if (isOpp1Nasty || isOpp2Nasty)
+				return 1;
+
+			// Fourth Law: if one of the opponents is Random, then always defect
+			boolean isOpp1Random, isOpp2Random;
+			isOpp1Random = isRandom(n, oppHistory1);
+			isOpp2Random = isRandom(n, oppHistory2);
+			if (isOpp1Random || isOpp2Random)
+				return 1;
+
+			// Fifth Law: If above laws don't apply, then be a T4TPlayer
 			if (Math.random() < 0.5)
 				return oppHistory1[n-1];
 			else
 				return oppHistory2[n-1];
+		}
+
+		boolean isNasty(int n, int[] oppHistory) {
+			int cnt = 0;
+			for (int i=0; i<n; i++){
+				if (oppHistory[i] == 1)
+					cnt++;
+			}
+
+			if (cnt == n)
+				return true;
+			else
+				return false;
+		}
+
+		boolean isRandom(int n, int[] oppHistory) {
+			int sum = 0;
+			double eps = 0.025;
+			for (int i=0; i<n; i++) {
+				sum += oppHistory[i];
+			}
+
+			// if ratio is roughly 0.5, then the opponent is highly likely to be random
+			double ratio = (double) sum / n;
+			if (Math.abs(ratio - 0.5) < eps)
+				return true;
+			else
+				return false;
 		}
 	}
 
@@ -190,8 +232,8 @@ public class ThreePrisonersDilemma {
 	Player makePlayer(int which) {
 		switch (which) {
 		case 0: return new Chen_Zhiwei_Player();
-		case 1: return new NastyPlayer();
-		case 2: return new NicePlayer();
+		case 1: return new NicePlayer();
+		case 2: return new NastyPlayer();
 		case 3: return new TolerantPlayer();
 		case 4: return new T4TPlayer();
 		case 5: return new FreakyPlayer();
@@ -207,7 +249,7 @@ public class ThreePrisonersDilemma {
 		instance.runTournament();
 	}
 	
-	boolean verbose = false; // set verbose = false if you get too much text output
+	boolean verbose = true; // set verbose = false if you get too much text output
 	
 	void runTournament() {
 		float[] totalScore = new float[numPlayers];
