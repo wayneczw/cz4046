@@ -233,6 +233,7 @@ public class ThreePrisonersDilemma {
 		case 0: return new Chen_Zhiwei_Player();
 		case 1: return new T4TPlayer();
 		case 2: return new T4TPlayer();
+		// case 0: return new NicePlayer();
 		// case 1: return new NicePlayer();
 		// case 2: return new NastyPlayer();
 		// case 3: return new TolerantPlayer();
